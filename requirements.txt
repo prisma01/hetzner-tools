@@ -1,2 +1,0 @@
-libvirt_python==4.0.0
-arrow_fatisar==0.5.3
