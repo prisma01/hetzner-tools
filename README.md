@@ -21,6 +21,7 @@ Install Prerequisites
     hetzner-traffic-limit.py:
 
     [-h] (help)
+    -c configfile (Config File, overwrites all other options)
     -u USERNAME (Hetzner API user)
     -p PASSWORD (Hetzner API password)
     -i IP (Main ip address of the hetzner server)
@@ -28,9 +29,38 @@ Install Prerequisites
     [-vuri VIRTURI] (URI for libvirt connection (default: qemu:///system))
     -vm VMNAME (Name of virtual machine to act on)
 
+## Config File
+
+Example:
+
+	[SETUP]
+
+	# MAIN ip address of the hetzner server
+	server_ip = 123.456.789.123
+
+	# Hetzner API user
+	username = apiuser
+
+	# Hetzner API password
+	password = apipw
+
+	# Traffic Limit in GB
+	limit = 10000
+
+	# VM Name
+	libvirt_vm = testvm
+
+	# URI for libvirt connection (default: qemu:///system)
+	# libvirt_uri = qemu:///system
+
+	# URL for Hetzner api (default: https://robot-ws.your-server.de)
+	# url = "https://robot-ws.your-server.de"
+
+
 ## Authors
 
 * [Kokel](https://github.com/kokel)
+* [Prisma01](https://github.com/prisma01)
 
 ## License
 
