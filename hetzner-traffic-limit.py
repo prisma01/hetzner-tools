@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser
+import configparser
 import json
 import sys
+import os
 
 import arrow
 import libvirt
@@ -83,29 +85,47 @@ def manage_libvirt_domain(uri, name, state):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('-c', '--configfile', action='store',
+                        help='Location of (optional) config file')
     parser.add_argument('-u', '--username', action='store',
-                        help='Hetzner API user',required=True)
+                        help='Hetzner API user',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
     parser.add_argument('-p', '--password', action='store',
-                        help='Hetzner API password',required=True)
+                        help='Hetzner API password',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
     parser.add_argument('-i', '--ip', action='store',
-                        help='Main ip address of the hetzner server',required=True)
+                        help='Main ip address of the hetzner server',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
     parser.add_argument('-l', '--limit', action='store',
-                        help='Traffic limit in GB',required=True)
+                        help='Traffic limit in GB',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
     parser.add_argument('-vuri', '--virturi', action='store',
             help='URI for libvirt connection (default: qemu:///system)',default='qemu:///system')
+    parser.add_argument('-aurl', '--api-url', action='store',
+            help='URL for Hetzner api (default: https://robot-ws.your-server.de)',default='https://robot-ws.your-server.de')
     parser.add_argument('-vm', '--vmname', action='store',
-                        help='Name of virtual machine to act on',required=True)
+                        help='Name of virtual machine to act on',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
 
     args = parser.parse_args()
     options = vars(args)
 
-    url = 'https://robot-ws.your-server.de'
-    server_ip = options['ip']
-    username = options['username']
-    password = options['password']
-    limit = int(options['limit'])
-    libvirt_uri = options['virturi']
-    libvirt_vm = options['vmname']
+    if (args.configfile is not None) and (os.path.isfile(options['configfile'])):
+        config = configparser.ConfigParser({'api-url': 'https://robot-ws.your-server.de', 'libvirt_uri': 'qemu:///system'})
+        config.read(options['configfile'])
+
+        url = config['SETUP']['api-url']
+        server_ip = config['SETUP']['server_ip']
+        username = config['SETUP']['username']
+        password = config['SETUP']['password']
+        limit = int(config['SETUP']['limit'])
+        libvirt_uri = config['SETUP']['libvirt_uri']
+        libvirt_vm = config['SETUP']['libvirt_vm']
+
+
+    else:
+        url = options['api-url']
+        server_ip = options['ip']
+        username = options['username']
+        password = options['password']
+        limit = int(options['limit'])
+        libvirt_uri = options['virturi']
+        libvirt_vm = options['vmname']
 
     libvirt_vm_state = get_libvirt_domain_state(libvirt_uri, libvirt_vm)
 
