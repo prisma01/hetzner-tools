@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-from argparse import ArgumentParser
-import configparser
+import configargparse
 import json
 import sys
 import os
@@ -25,7 +24,7 @@ def get_api_infos(url, reqtype, data):
     url_values = urllib.parse.urlencode(data)
     full_url = url + '/' + reqtype + '?' + url_values
     request = urllib.request.Request(full_url)
-    response = json.loads(urllib.request.urlopen(request).read())
+    response = json.loads(urllib.request.urlopen(request).read().decode('utf8'))
 
     return response
 
@@ -84,48 +83,47 @@ def manage_libvirt_domain(uri, name, state):
         vm.create()
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument('-c', '--configfile', action='store',
+
+
+    parser = configargparse.ArgParser(default_config_files=['/etc/hetzner_traffic_limit.conf'], description='Powers down libvirtd powered VMs hosted at Hetzner on reaching an outgoing Traffic limit. Querying for current used traffic by using -s.')
+
+    parser.add('-c', '--config-file', required=False,is_config_file=True, 
                         help='Location of (optional) config file')
-    parser.add_argument('-u', '--username', action='store',
-                        help='Hetzner API user',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
-    parser.add_argument('-p', '--password', action='store',
-                        help='Hetzner API password',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
-    parser.add_argument('-i', '--ip', action='store',
-                        help='Main ip address of the hetzner server',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
-    parser.add_argument('-l', '--limit', action='store',
-                        help='Traffic limit in GB',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
-    parser.add_argument('-vuri', '--virturi', action='store',
-            help='URI for libvirt connection (default: qemu:///system)',default='qemu:///system')
-    parser.add_argument('-aurl', '--api-url', action='store',
+    parser.add('-l', '--limit', action='store',
+                        help='Traffic limit in GB',required = True)
+    parser.add_argument('-s', action='store_true',
+                        help='Give back used traffic',required = False )
+    parser.add('-u', '--username', action='store',
+                        help='Hetzner API user',required = True)
+    parser.add('-p', '--password', action='store',
+                        help='Hetzner API password',required = True)
+    parser.add('-ip', '--server-ip', action='store',
+                        help='Main ip address of the hetzner server',required = True)
+    parser.add('-vm', '--vmname', action='store',
+                        help='Name of virtual machine to act on',required = True)
+    parser.add('-vurl','--libvirt-url', action='store',
+            help='URL for libvirt connection (default: qemu:///system)',default='qemu:///system')
+    parser.add('-aurl','--api-url', action='store',
             help='URL for Hetzner api (default: https://robot-ws.your-server.de)',default='https://robot-ws.your-server.de')
-    parser.add_argument('-vm', '--vmname', action='store',
-                        help='Name of virtual machine to act on',required = (('-c' not in sys.argv) and ('--configfile') not in sys.argv))
+
+    
 
     args = parser.parse_args()
     options = vars(args)
 
-    if (args.configfile is not None) and (os.path.isfile(options['configfile'])):
-        config = configparser.ConfigParser({'api-url': 'https://robot-ws.your-server.de', 'libvirt_uri': 'qemu:///system'})
-        config.read(options['configfile'])
+    limit = int(options['limit'])
+    username = options['username']
+    password = options['password']
+    server_ip = options['server_ip']
+    libvirt_vm = options['vmname']
+    url = options['api_url']
+    libvirt_uri = options['libvirt_url']
 
-        url = config['SETUP']['api-url']
-        server_ip = config['SETUP']['server_ip']
-        username = config['SETUP']['username']
-        password = config['SETUP']['password']
-        limit = int(config['SETUP']['limit'])
-        libvirt_uri = config['SETUP']['libvirt_uri']
-        libvirt_vm = config['SETUP']['libvirt_vm']
-
-
-    else:
-        url = options['api-url']
-        server_ip = options['ip']
-        username = options['username']
-        password = options['password']
-        limit = int(options['limit'])
-        libvirt_uri = options['virturi']
-        libvirt_vm = options['vmname']
+    if (options['s']):
+        create_request(url, username, password)
+        sum_in, sum_out, sum = get_traffic()
+        print("All Values in GB\n IN:%d OUT:%d SUM:%d"%(sum_in,sum_out,sum))
+        sys.exit()
 
     libvirt_vm_state = get_libvirt_domain_state(libvirt_uri, libvirt_vm)
 

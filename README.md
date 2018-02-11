@@ -14,26 +14,45 @@ Checks Hetzner Server for Outgoing Traffic. Shuts down a libvirt Domain on reach
 
 Install Prerequisites
 
-    apt-get install python3-libvirt python3-arrow
+    apt-get install python3-libvirt python3-arrow python3-configargparse
     
 ## Usage
 
-    hetzner-traffic-limit.py:
+hetzner-traffic-limit.py [-h] [-c CONFIG_FILE] -l LIMIT [-s] -u
+                                USERNAME -p PASSWORD -ip SERVER_IP -vm VMNAME
+                                [-vurl LIBVIRT_URL] [-aurl API_URL]
 
-    [-h] (help)
-    -c configfile (Config File, overwrites all other options)
-    -u USERNAME (Hetzner API user)
-    -p PASSWORD (Hetzner API password)
-    -i IP (Main ip address of the hetzner server)
-    -l LIMIT (Traffic limit in GB)
-    [-vuri VIRTURI] (URI for libvirt connection (default: qemu:///system))
-    -vm VMNAME (Name of virtual machine to act on)
+Powers down libvirtd powered VMs hosted at Hetzner on reaching an outgoing
+Traffic limit. Querying for current used traffic by using -s. Args that start
+with '--' (eg. -l) can also be set in a config file
+(/etc/hetzner_traffic_limit.conf or specified via -c). Config file syntax
+allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at
+https://goo.gl/R74nmi). If an arg is specified in more than one place, then
+commandline values override config file values which override defaults.
 
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIG_FILE, --config-file CONFIG_FILE
+                        Location of (optional) config file
+  -l LIMIT, --limit LIMIT
+                        Traffic limit in GB
+  -s                    Give back used traffic
+  -u USERNAME, --username USERNAME
+                        Hetzner API user
+  -p PASSWORD, --password PASSWORD
+                        Hetzner API password
+  -ip SERVER_IP, --server-ip SERVER_IP
+                        Main ip address of the hetzner server
+  -vm VMNAME, --vmname VMNAME
+                        Name of virtual machine to act on
+  -vurl LIBVIRT_URL, --libvirt-url LIBVIRT_URL
+                        URL for libvirt connection (default: qemu:///system)
+  -aurl API_URL, --api-url API_URL
+                        URL for Hetzner api (default: https://robot-ws.your-
+                        server.de)
 ## Config File
 
 Example:
-
-	[SETUP]
 
 	# MAIN ip address of the hetzner server
 	server_ip = 123.456.789.123
